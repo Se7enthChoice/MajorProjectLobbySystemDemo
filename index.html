@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snap Game</title>
+</head>
+<body>
+    <button id = 'buttonCreate'>New Game</button>
+    <button id = 'buttonJoin'>Join Game</button>
+    <input type = 'text' id = 'txtGameId'>
+    <div id = 'divPlayers'></div>
+    <script>
+        //html
+        let gameId = null;
+        const buttonCreate = document.getElementById("buttonCreate");
+        const buttonJoin = document.getElementById("buttonJoin");
+        const textGameId = document.getElementById("txtGameId");
+        const divPlayers = document.getElementById("divPlayers");
+
+        buttonJoin.addEventListener("click", e=> {
+            if(gameId === null){
+                gameId = textGameId.value;
+            }
+            const payload = {
+                "method": "join",
+                "clientId": clientId,
+                "gameId": gameId
+            }
+            ws.send(JSON.stringify(payload)) //send join game request to server
+        })
+
+        buttonCreate.addEventListener("click", e=> {
+            const payload = {
+                "method": "create",
+                "clientId": clientId
+            }
+            ws.send(JSON.stringify(payload)) //send create game request to server
+        })
+
+        let clientId = null;
+        let ws = new WebSocket("ws://localhost:8080")
+        ws.onmessage = message => {
+            //message.data
+            const response = JSON.parse(message.data);
+            //connect method
+            if (response.method === "connect"){
+                clientId = response.clientId;
+                console.log("Client id Set successfully " + clientId)
+            }
+            //create method
+            if (response.method === "create"){
+                gameId = response.game.id;
+                console.log("game successfully created with id " + response.game.id)
+            }
+
+            //join method
+            if (response.method === "join"){
+                const game = response.game;
+                while(divPlayers.firstChild)
+                    divPlayers.removeChild (divPlayers.firstChild)//clear all
+
+                game.clients.forEach(c => {
+                    const d = document.createElement("div");
+                    d.style.width = "200px";
+                    d.textContent = c.clientId;
+                    divPlayers.appendChild(d);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
